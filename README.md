@@ -2,41 +2,37 @@
 
 # Space Invaders Game
 
-- [Read the documentation for project](docs/info.md)
+A hardware-level Space Invaders-style arcade game written in Verilog for the Tiny Tapeout platform. The game generates a 640x480 @ 60Hz VGA signal entirely in hardware, featuring custom pixel-art sprites, procedural backgrounds, and rapid-fire collision mechanics.
 
-## What is Tiny Tapeout?
+## Features
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
+- Procedural VGA Rendering: No framebuffer or external video memory is used. Graphics are generated on-the-fly (beam racing) as the VGA coordinate counters sweep across the screen.
 
-To learn more and get started, visit https://tinytapeout.com.
+- Custom Sprites: Player rockets and alien crabs are defined as binary arrays directly in the Verilog code and rendered dynamically at a 4x scale.
 
-## Set up your Verilog project
+- Procedural Starfield: The background features a sparse, dim-blue starfield generated using a bitwise pseudo-random formula on the current pixel coordinates.
 
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
+- Rapid-Fire Combat: Players can track and fire up to three active bullets on the screen simultaneously.
 
-The GitHub action will automatically build the ASIC files using [LibreLane](https://www.zerotoasiccourse.com/terminology/librelane/).
+- Hardware Gamepad Support: Interfaces directly with a SNES-style Gamepad PMOD via a custom serial latch/clock/data decoder.
 
-## Enable GitHub actions to build the results page
+## How it Works
 
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
+- Game Logic Loop: The core game state updates exactly once per frame, triggered by the falling edge of the VGA vsync signal. The player controls a rocket ship at the bottom of the screen while an array of aliens moves horizontally, bouncing off the screen edges and dropping lower upon each bounce.
 
-## Resources
+- Collision Detection: Bounding box logic continuously checks if any active bullets intersect with the coordinates of "alive" aliens. If a hit is detected during the frame tick, the bullet despawns and the specific alien's alive-state flag is cleared.
 
-- [FAQ](https://tinytapeout.com/faq/)
-- [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
-- [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
+- Sprite Rendering Engine: The logic maps the current screen pixel coordinates (pix_x, pix_y) to the bounding box of the active entity. It divides the coordinate offset by 4 (to achieve 4x scaling) and samples the corresponding bit from the sprite array to determine if a colored pixel should be driven to the VGA pins.
 
-## What next?
+## External Hardware Requirements
 
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
-  - Bluesky [@tinytapeout.com](https://bsky.app/profile/tinytapeout.com)
+- To play the game on physical hardware, you will need the following peripherals:
+
+- Tiny Tapeout Demo Board: The base carrier board providing the 25MHz clock, power, and IO headers.
+
+- VGA PMOD: Connects to the dedicated output pins (uo_out) to drive the monitor display.
+
+- Gamepad PMOD: A controller interface (designed by Psychogenic Technologies) connecting to the dedicated input pins (ui_in). It relies on a serial interface: LATCH on ui_in[4], CLOCK on ui_in[5], and DATA on ui_in[6].
+
+Note: If the gamepad is not present, the game automatically falls back to raw pin inputs. You can manually play by toggling the raw input pins (Pin 2 for Left, Pin 3 for Right, Pin 4 for Shoot).
+
